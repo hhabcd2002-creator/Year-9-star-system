@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Year 9 Student Achievement Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gradient-border {
+      border: 3px solid transparent;
+      background-image: linear-gradient(#0f172a, #0f172a), 
+                        linear-gradient(to right, #fbbf24, #10b981, #3b82f6, #ef4444, #a855f7);
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+    }
+    @keyframes badge-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4)); } 50% { filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.9)); } }
+    .tier-glowing { animation: badge-glow 1.5s infinite ease-in-out; }
+    .term-glow-card { box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); border: 3px solid #f59e0b !important; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+  <main class="container mx-auto px-4 py-12 max-w-4xl">
+    <section id="home-page" class="text-center py-6">
+      <h1 class="text-4xl font-extrabold text-amber-400 mb-12 uppercase">YEAR-9 STUDENT ACHIEVEMENTS</h1>
+      <div id="student-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+    </section>
+
+    <section id="detail-page" class="hidden max-w-2xl mx-auto">
+      <button onclick="location.reload()" class="mb-8 text-slate-400 hover:text-amber-400 underline">← Back to Dashboard</button>
+      <div class="bg-slate-900 gradient-border rounded-3xl p-8">
+        <div class="text-center mb-8">
+          <h2 id="detail-name" class="text-3xl font-bold"></h2>
+          <div id="genius-main-tag" class="hidden mt-3 bg-indigo-600 inline-block px-4 py-1 rounded-full text-[11px] font-black tracking-widest animate-pulse">💡 GENIUS</div>
+          <div id="queen-main-tag" class="hidden mt-3 bg-amber-500 text-slate-950 inline-block px-4 py-1 rounded-full text-[11px] font-black tracking-widest">👑 QUEEN OF THE CLASS</div>
+        </div>
+        <div id="badge-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center py-10 text-slate-500 text-sm">
+    <p>Made with ❤️ by Sir Htet</p>
+  </footer>
+
+  <script>
+    // Year 9 API Link အသစ်ထည့်ထားပါတယ်
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxBx98MlJvk4jFDClK6hQcX6tvuCpl4eHosxaMxeynSvPK9BzLih5WQxymodf337DbZqA/exec';
+    let studentsData = [];
+
+    async function fetchDashboardData() {
+      try {
+        const res = await fetch(API_URL);
+        studentsData = await res.json();
+        renderHomeGrid();
+      } catch (err) { console.error(err); }
+    }
+
+    function renderHomeGrid() {
+      const grid = document.getElementById('student-grid');
+      studentsData.forEach((s, i) => {
+        const geniusCount = parseInt(s.Genius || 0);
+        const termWins = (parseInt(s["1st Term"] || 0) + parseInt(s["2nd Term"] || 0));
+        
+        const card = document.createElement('div');
+        card.className = `p-6 rounded-2xl gradient-border bg-slate-900 cursor-pointer ${termWins >= 2 ? 'term-glow-card' : ''}`;
+        card.innerHTML = `
+          ${geniusCount >= 5 ? '<div class="text-[10px] font-bold text-indigo-400 mb-2">💡 GENIUS</div>' : ''}
+          <h3 class="font-bold text-lg">${s.Name}</h3>
+        `;
+        card.onclick = () => showDetail(i);
+        grid.appendChild(card);
+      });
+    }
+
+    function showDetail(index) {
+      const s = studentsData[index];
+      document.getElementById('home-page').classList.add('hidden');
+      document.getElementById('detail-page').classList.remove('hidden');
+      document.getElementById('detail-name').innerText = s.Name;
+      
+      const g = parseInt(s.Genius || 0);
+      const totalStars = parseInt(s.Gold || 0) + parseInt(s.Green || 0);
+      const termWins = (parseInt(s["1st Term"] || 0) + parseInt(s["2nd Term"] || 0));
+
+      if(g >= 5) document.getElementById('genius-main-tag').classList.remove('hidden');
+      if(termWins >= 2) document.getElementById('queen-main-tag').classList.remove('hidden');
+
+      const container = document.getElementById('badge-container');
+      const starTier = totalStars >= 100 ? '👑 CROWNED' : totalStars >= 50 ? '🔥 ULTRA' : totalStars >= 20 ? '⚡ SUPER' : totalStars >= 10 ? '🌟 GLOWING' : totalStars >= 5 ? '✅ UNLOCKED' : '🔒 LOCKED';
+      const gTitle = g >= 4 ? 'GENIUS OF CLASS' : 'GENIUS';
+      const gTier = g >= 4 ? '👑 MASTER' : g >= 3 ? '⚡ SUPER' : g >= 2 ? '🌟 GLOWING' : g >= 1 ? '✅ UNLOCKED' : '🔒 LOCKED';
+
+      container.innerHTML = `
+        <div class="p-4 bg-slate-800 rounded-xl border border-slate-700">
+          <div class="text-xs text-slate-400 uppercase">Star Milestone</div>
+          <div class="font-bold text-amber-400">${starTier}</div>
+        </div>
+        <div class="p-4 bg-slate-800 rounded-xl border border-slate-700">
+          <div class="text-xs text-slate-400 uppercase">${gTitle}</div>
+          <div class="font-bold text-indigo-400">${gTier}</div>
+        </div>
+      `;
+    }
+
+    fetchDashboardData();
+  </script>
+</body>
+</html>
